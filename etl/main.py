@@ -2,7 +2,7 @@ import logging
 import time
 from dataclasses import dataclass
 
-from config import Settings, PROJECT_ROOT
+from config import PROJECT_ROOT, Settings
 from extractor import (
     FILMWORK_SQL,
     GENRES_SQL,

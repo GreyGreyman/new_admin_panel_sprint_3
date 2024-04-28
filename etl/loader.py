@@ -1,5 +1,7 @@
+import json
 import logging
 import typing as t
+from pathlib import Path
 
 import backoff
 import elastic_transport
@@ -7,8 +9,6 @@ from config import ElasticSettings
 from elasticsearch import Elasticsearch
 from elasticsearch.helpers import bulk
 from state import State
-import json
-from pathlib import Path
 
 logger = logging.getLogger("etl")
 

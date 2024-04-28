@@ -1,7 +1,7 @@
 import abc
 import json
-from typing import Any
 from os import PathLike, makedirs, path
+from typing import Any
 
 
 class BaseStorage(abc.ABC):

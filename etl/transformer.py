@@ -1,9 +1,8 @@
+import logging
 import typing as t
 
-from models import Filmwork
-
-import logging
 import pydantic
+from models import Filmwork
 
 logger = logging.getLogger("etl")
 
