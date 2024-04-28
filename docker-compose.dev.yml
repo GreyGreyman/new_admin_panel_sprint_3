@@ -1,0 +1,56 @@
+services:
+  elasticsearch:
+    image: elasticsearch:8.13.0
+    restart: always
+    ports:
+      - ${ES_EXTERNAL_PORT}:9200
+    environment:
+      - discovery.type=single-node
+      - xpack.security.enabled=false
+      # настройки для того чтобы можно было подключится к elasticsearch из elasticvue
+      - http.cors.enabled=true
+      - http.cors.allow-origin="https://app.elasticvue.com"
+    volumes:
+      - esdata:/usr/share/elasticsearch/data
+    expose:
+      - 9200
+    healthcheck:
+      test: curl -s http://elasticsearch:9200 >/dev/null || exit 1
+      interval: 5s
+      timeout: 5s
+      retries: 50
+
+  db:
+    build: ./db
+    restart: always
+    ports:
+      - "5434:5432"
+    env_file:
+      - .env
+    volumes:
+      - movies-data:/var/lib/postgresql/data
+    expose:
+      - 5432
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U postgres" ]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  etl:
+    build: .
+    restart: always
+    env_file:
+      - ./etl/.env.prod
+    volumes:
+      - state:/opt/etl/state
+    depends_on:
+      elasticsearch:
+        condition: service_healthy
+      db:
+        condition: service_healthy
+
+volumes:
+  esdata:
+  movies-data:
+  state:
