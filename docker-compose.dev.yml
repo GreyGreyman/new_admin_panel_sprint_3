@@ -41,7 +41,7 @@ services:
     build: .
     restart: always
     env_file:
-      - ./etl/.env.prod
+      - ./etl/.env
     volumes:
       - state:/opt/etl/state
     depends_on:

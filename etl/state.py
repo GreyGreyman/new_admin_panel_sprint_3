@@ -1,7 +1,7 @@
 import abc
 import json
 from typing import Any
-from os import PathLike
+from os import PathLike, makedirs, path
 
 
 class BaseStorage(abc.ABC):
@@ -39,6 +39,7 @@ class JsonFileStorage(BaseStorage):
     def retrieve_state(self) -> dict[str, Any]:
         """Получить состояние из хранилища."""
         try:
+            makedirs(path.dirname(self.file_path), exist_ok=True)
             with open(self.file_path, encoding="utf-8") as state_file:
                 state = json.load(state_file)
         except Exception:

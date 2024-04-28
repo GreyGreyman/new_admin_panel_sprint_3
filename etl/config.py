@@ -29,7 +29,6 @@ class Settings(BaseSettings):
     postgres: PostgresSettings
     es: ElasticSettings
     batch_size: int
-    state_filename: str
     update_cooldown: int
 
     model_config = SettingsConfigDict(
