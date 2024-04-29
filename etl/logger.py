@@ -1,5 +1,6 @@
 import logging
 import sys
+from config import settings
 
 
 def setup_logger():
@@ -11,6 +12,6 @@ def setup_logger():
     console_handler = logging.StreamHandler(sys.stdout)
     console_handler.setFormatter(formatter)
     logger.addHandler(console_handler)
-    logger.setLevel(level="INFO")
+    logger.setLevel(level=settings.log_level.upper())
 
     logging.getLogger("backoff").addHandler(logging.StreamHandler())

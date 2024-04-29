@@ -34,7 +34,7 @@ def transform_filmwork_to_es(filmwork: Filmwork) -> dict[str, t.Any]:
                 person.name for person in filmwork.persons if person.role == role
             ]
     except pydantic.ValidationError as e:
-        logger.error(f"ошибка при транформации кинопроизведения: {filmwork}")
+        logger.error(f"error while transforming filmwork: {filmwork}")
         raise TransformError from e
 
     return es_filmwork

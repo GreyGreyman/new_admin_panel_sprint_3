@@ -30,8 +30,7 @@ class ESLoader:
         self.config = es_config
         self.client = Elasticsearch(f"http://{self.config.host}:{self.config.port}")
 
-        # не смог придумать как красиво создать индекс при поднятии контейнера,
-        # потому перенёс этот функционал сюда, дополнительная функция для backoff
+        # большое спасибо за ресурсы, обязательно изучу!
         self.ensure_index()
 
     @backoff.on_exception(
@@ -76,9 +75,10 @@ class ESLoader:
         try:
             response = self._upload(load_actions)
         except Exception as e:
+            # даже не думал об этом с точки зрения дискового пространства, спасибо!
             logging.exception(
-                f"ошибка при загрузке данных в elasticsearch, не загруженная пачка {batch}"
+                f"error while loading data into elasricsearch, problem batch: {batch}"
             )
             raise LoaderError from e
         else:
-            logger.info(f"успешно загружено {len(batch)} записей в elasticsearch")
+            logger.info(f"successufuly loaded {len(batch)} entries into elasticsearch")

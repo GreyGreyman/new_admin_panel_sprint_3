@@ -2,8 +2,8 @@ services:
   elasticsearch:
     image: elasticsearch:8.13.0
     restart: always
-    ports:
-      - ${ES_EXTERNAL_PORT}:9200
+    # Я оставил порты наружу для ES только для того чтобы можно было запустить тесты для проекта)
+    # Спасибо большое за статью!
     environment:
       - discovery.type=single-node
       - xpack.security.enabled=false
@@ -16,6 +16,9 @@ services:
       interval: 5s
       timeout: 10s
       retries: 50
+  
+  # Вместо кибаны я использовал elasticvue, в dev compose файле есть для этого настройки,
+  # в следующий раз попробую кибану, спасибо за рекомендацию!
 
   db:
     build: ./db

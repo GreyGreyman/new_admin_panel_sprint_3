@@ -2,15 +2,13 @@ import logging
 import time
 from dataclasses import dataclass
 
-from config import PROJECT_ROOT, Settings
-from extractor import (
-    FILMWORK_SQL,
-    GENRES_SQL,
-    PERSONS_SQL,
-    PgExtractor,
-)
+from apscheduler.schedulers.background import BackgroundScheduler
+from apscheduler.triggers.cron import CronTrigger
+from config import PROJECT_ROOT, settings
+from extractor import PgExtractor
 from loader import ESLoader, LoaderError
 from logger import setup_logger
+from sql_queries import FILMWORK_SQL, GENRES_SQL, PERSONS_SQL
 from state import JsonFileStorage, State
 from transformer import TransformError, transform_filmworks
 
@@ -37,17 +35,16 @@ def run_etl(
             loader.load_batch(transformed_filmworks)
         except (LoaderError, TransformError) as e:
             logger.error(
-                f"ошибка при обработке пачки {filmwork_batch}, прерываем загрузку"
+                f"error while processing batch {filmwork_batch}, aborting etl process"
             )
             raise e
         else:
             state.set_state(entity.state_key, filmwork_batch[-1].modified.isoformat())
 
 
-def main():
-    setup_logger()
+def etl():
     try:
-        settings = Settings()
+        logger.info("starting etl process")
         state = State(JsonFileStorage(PROJECT_ROOT / "state/state.json"))
         entities = [
             EntityETLConfig(
@@ -60,19 +57,43 @@ def main():
         ]
         pg_extractor = PgExtractor(settings.postgres, settings.batch_size, state)
         es_loader = ESLoader(settings.es, index_name="movies", state=state)
-
-        while True:
-            logger.info("запуск etl процесса")
-            with pg_extractor:
-                for entity in entities:
-                    run_etl(entity, pg_extractor, es_loader, state)
-                    logger.info(
-                        f"обработаны обновления кинопроизведений из сущности {entity.name}"
-                    )
-            time.sleep(settings.update_cooldown)
-
+        with pg_extractor:
+            for entity in entities:
+                run_etl(entity, pg_extractor, es_loader, state)
+                logger.info(f"processed filmworks updates from entity {entity.name}")
     except Exception:
-        logger.exception("необработанное исключение")
+        logger.exception("unhadled exception")
+
+
+# знаю про библиотеку apscheduler и использую в работе, просто по теории и комментариям наставников
+# я решил что способ запуска нашего процесса etl за рамками учебного проекта и сделал while True sleep
+# как минимальный способ тестирования и демонстрации обработки обновлений
+# на самом деле я бы предпочел использовать для планирования запусков именно cron или systemd timers
+# настроил одноразовый запуск по-умолчанию чтобы можно было использовать внешинй планировщик (cron)
+# или запуск с использованием apscheduler при наличии переменной среды SCHEDULE__ENABLED, для настройки
+# расписания использовал выражения крон как наиболее простой и быстрый способ гибкой настройки
+def main():
+    setup_logger()
+
+    if not settings.schedule.enabled:
+        etl()
+    else:
+        cron_expression = settings.schedule.cron
+        schedule_timezone = settings.schedule.timezone
+        trigger = CronTrigger.from_crontab(cron_expression, timezone=schedule_timezone)
+        scheduler = BackgroundScheduler()
+        scheduler.add_job(etl, trigger)
+        logger.info(
+            f"starting scheduler with cron: {cron_expression} timezone: {schedule_timezone}",
+        )
+        scheduler.start()
+
+        try:
+            # This is here to simulate application activity (which keeps the main thread alive).
+            while True:
+                time.sleep(2)
+        except (KeyboardInterrupt, SystemExit):
+            scheduler.shutdown()
 
 
 if __name__ == "__main__":

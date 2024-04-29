@@ -23,13 +23,21 @@ class ElasticSettings(BaseModel):
     port: str
 
 
+class ScheduleSettings(BaseModel):
+    """Настройки для запуска процесса etl по расписанию"""
+    enabled: bool = False # по умолчанию запускать единоразово без использования планировщика
+    cron: str # cron выражение
+    timezone: str = "Europe/Moscow"
+
+
 class Settings(BaseSettings):
     """Главный класс настроек всего приложения"""
 
     postgres: PostgresSettings
     es: ElasticSettings
+    schedule: ScheduleSettings
     batch_size: int
-    update_cooldown: int
+    log_level: str = "INFO"
 
     model_config = SettingsConfigDict(
         env_file=PROJECT_ROOT / ".env",
@@ -38,6 +46,6 @@ class Settings(BaseSettings):
     )
 
 
-if __name__ == "__main__":
-    settings = Settings()
-    print(settings)
+# Согласен что так удобнее, просто как-то комфортнее вызывать подобный код явно
+# в главном потоке управления и явно передавать настройки по-назначению
+settings = Settings()
